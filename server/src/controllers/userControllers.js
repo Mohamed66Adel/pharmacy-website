@@ -7,12 +7,13 @@ const get_all_users = async (req, res) => {
     res.send(users);
 }
 
+
 const get_one_user = async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
         res.status(404).send('Invalid ObjectID!');
         return;
     };
-    const user = await User.findOne({_id: new ObjectId(req.params.id)});
+    const user = await User.findById(req.params.id);
     if (!user) {
         res.status(404).send('user with given ID is not found!');
     }
@@ -21,12 +22,13 @@ const get_one_user = async (req, res) => {
     }
 }
 
+
 const update_one_user = async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
         res.status(404).send('Invalid ObjectID!');
         return;
     };
-    const user = await User.findOne({_id: new ObjectId(req.params.id)});
+    const user = await User.findById(req.params.id);
     if (!user) {
         res.status(404).send('user with given ID is not found!');
     }
@@ -38,7 +40,15 @@ const update_one_user = async (req, res) => {
             role: req.body.role
         }
         try {
-            const updateUser = await User.updateOne({_id: new ObjectId(req.params.id)}, newUser);
+            // check if user being updated is the last admin and if, don't allow changing own role
+            if (user.role === "Admin") {
+                const admins = await User.find({ role: "Admin" });
+                if (admins.length < 2 && req.body.role && req.body.role !== "Admin") {
+                    res.status(405).send("this is the last admin account and can't change its own role");
+                    return;
+                }
+            }
+            const updateUser = await User.findByIdAndUpdate(req.params.id, newUser);
             res.status(200).send('updated successfully');
         }
         catch(err) {
@@ -47,27 +57,34 @@ const update_one_user = async (req, res) => {
     }
 }
 
+
 const delete_one_user = async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
         res.status(404).send('Invalid ObjectID!');
         return;
-    };
-    const user = await User.findOne({_id: new ObjectId(req.params.id)});
-    if (!user) {
-        res.status(404).send('user with given ID is not found!');
     }
-    else {
-        try {
-            await User
-                    .deleteOne({_id: new ObjectId(req.params.id)})
-                    .then('deleted successfully')
-                    .catch((err) => console.log(err));
-            res.send(user);
+    try {
+        const userToDelete = await User.findById(req.params.id);
+        if (!userToDelete) {
+                res.status(404).send('User with the given ID is not found!');
+                return;
         }
-        catch(err) {
-            console.log('error', err);
+        else {
+            // check if the userToDelete is the last admin user and if, reject
+            if (userToDelete.role === "Admin") {
+                const admins = await User.find({ role: "Admin" });
+                if (admins.length < 2) {
+                    res.status(405).send("this is the last admin account and can't be deleted!");
+                    return;
+                }
+            }
+            await User.findByIdAndDelete(req.params.id);
+            res.status(200).send('Deleted successfully');
         }
+    } catch (err) {
+        res.status(500).send(err);
     }
-}
+};
+  
 
 export { get_all_users, get_one_user, update_one_user, delete_one_user };

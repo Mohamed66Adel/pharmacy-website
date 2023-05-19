@@ -2,20 +2,21 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
-
-import { router as userRoutes } from './src/routes/userRoutes.js';
+import cors from "cors";
 import { router as authRoutes } from './src/routes/authRoutes.js';
-import { authToken } from './src/middlewares/authMiddleware.js';
+import { router as userRoutes } from './src/routes/userRoutes.js';
+import { router as productRoutes } from './src/routes/productRoutes.js';
 
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(userRoutes);
+app.use(cookieParser());
+app.use(cors());
 app.use(authRoutes);
-// app.use(cookieParser());
-// app.use(authToken, userRoutes);
+app.use(userRoutes);
+app.use(productRoutes);
 
 mongoose
   .connect(process.env.DB_URL)
