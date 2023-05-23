@@ -35,7 +35,9 @@ function Product() {
 			})
 			.then((res) => {
 				console.log(res.data);
-				setMessage("");
+				setTimeout(() => {
+					setMessage("");
+				}, 1200);
 			})
 			.catch((err) => {
 				console.log(err.response.data);
@@ -51,7 +53,7 @@ function Product() {
 			<main>
 				<div className='product-container'>
 					<div className='image-container'>
-						<img src={product.image} alt='Product' />
+						<img src={process.env.PUBLIC_URL + "/images/panadol.png"} alt='Product' />
 					</div>
 					<div className='details-container'>
 						<h1 className='product-name'>{product.name}</h1>
